@@ -44,4 +44,12 @@ contract FactoryRealWorldAssets {
         }
         return _assets[index];
     }
+
+    function getDeployedAssetsAddresses() external view returns (address[] memory) {
+        address[] memory addresses = new address[](_assets.length);
+        for (uint256 i = 0; i < _assets.length; i++) {
+            addresses[i] = address(_assets[i]);
+        }
+        return addresses;
+    }
 }

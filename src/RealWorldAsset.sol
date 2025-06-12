@@ -9,12 +9,17 @@ import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Rec
 
 contract RealWorldAsset is ERC721URIStorage, Ownable {
     uint256 private _tokenIdCounter;
+    error LimitExceeded();
+    error BadAddress();
 
     constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) Ownable(msg.sender) {
         _tokenIdCounter = 0;
     }
 
     function mint(address to) external onlyOwner {
+        require(to != address(0), BadAddress());
+        require(_tokenIdCounter < 1, LimitExceeded());
+
         uint256 tokenId = _tokenIdCounter;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, string(abi.encodePacked("https://example.com/metadata/", tokenId)));
