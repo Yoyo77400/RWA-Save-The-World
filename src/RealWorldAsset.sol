@@ -17,7 +17,6 @@ contract RealWorldAsset is ERC721URIStorage, Ownable, Pausable {
 
     function mint(address to, string memory tokenURI) external onlyOwner whenNotPaused {
         if (to == address(0)) revert BadAddress();
-        if (_tokenIdCounter >= 1) revert LimitExceeded();
 
         uint256 tokenId = _tokenIdCounter;
         _safeMint(to, tokenId);

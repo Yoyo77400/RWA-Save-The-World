@@ -7,6 +7,7 @@ contract FactoryRealWorldAssets {
     // State variables
     RealWorldAsset[] private _assets;
     mapping(bytes32 => bool) private _existingAsset;
+    mapping(address => bool) private _isAssets;
 
     // Events and errors
     event AssetCreated(address indexed assetAddress, string name, string symbol);
@@ -24,6 +25,7 @@ contract FactoryRealWorldAssets {
         // Create a new RealWorldAsset instance. Add it to the assets array and mark it as existing.
         RealWorldAsset asset = new RealWorldAsset(name, symbol);
         _existingAsset[nameHash] = true;
+        _isAssets[address(asset)] = true;
         _assets.push(asset);
         emit AssetCreated(address(asset), name, symbol);
         return asset;
