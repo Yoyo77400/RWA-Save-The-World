@@ -2,27 +2,26 @@
 pragma solidity ^0.8.28;
 
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { ERC721URIStorage } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { IERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { ERC721URIStorage } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract RealWorldAsset is ERC721URIStorage, Ownable {
+contract RealWorldAsset is ERC721URIStorage, Ownable, Pausable {
     uint256 private _tokenIdCounter;
     error LimitExceeded();
     error BadAddress();
 
-    constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) Ownable(msg.sender) {
+    constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) Ownable(msg.sender) Pausable() {
         _tokenIdCounter = 0;
     }
 
-    function mint(address to) external onlyOwner {
-        require(to != address(0), BadAddress());
-        require(_tokenIdCounter < 1, LimitExceeded());
+    function mint(address to, string memory tokenURI) external onlyOwner whenNotPaused {
+        if (to == address(0)) revert BadAddress();
+        if (_tokenIdCounter >= 1) revert LimitExceeded();
 
         uint256 tokenId = _tokenIdCounter;
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, string(abi.encodePacked("https://example.com/metadata/", tokenId)));
+        _setTokenURI(tokenId, tokenURI);
         _tokenIdCounter++;
     }
 
@@ -32,6 +31,17 @@ contract RealWorldAsset is ERC721URIStorage, Ownable {
 
     function getName() external view returns (string memory) {
         return name();
+    }
+
+    function getTokenURI(uint256 tokenId) external view returns (string memory) {
+        return tokenURI(tokenId);
+    }
+
+    function pause () external onlyOwner {
+        _pause();
+    }
+    function unpause () external onlyOwner {
+        _unpause();
     }
 
 }

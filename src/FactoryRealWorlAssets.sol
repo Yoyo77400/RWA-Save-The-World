@@ -4,8 +4,11 @@ pragma solidity ^0.8.28;
 import { RealWorldAsset } from "./RealWorldAsset.sol";
 
 contract FactoryRealWorldAssets {
+    // State variables
     RealWorldAsset[] private _assets;
+    mapping(bytes32 => bool) private _existingAsset;
 
+    // Events and errors
     event AssetCreated(address indexed assetAddress, string name, string symbol);
     error EmptyName();
     error EmptySymbol();
@@ -13,18 +16,14 @@ contract FactoryRealWorldAssets {
     error AssetNotFound();
 
     function createAsset(string memory name, string memory symbol) external returns (RealWorldAsset) {
-        require(bytes(name).length > 0, EmptyName());
-        require(bytes(symbol).length > 0, EmptySymbol());
-        // Create a new RealWorldAsset instance
-        // and add it to the list of assets
-        // Ensure the asset does not already exist
-        for (uint256 i = 0; i < _assets.length; i++) {
-            require(
-                keccak256(abi.encodePacked(_assets[i].getName())) != keccak256(abi.encodePacked(name)),
-                AssetAlreadyExists()
-            );
-        }
+        bytes32 nameHash = keccak256(abi.encodePacked(name));
+        if (bytes(name).length == 0) revert EmptyName();
+        if (bytes(symbol).length == 0) revert EmptySymbol();
+        if (_existingAsset[nameHash]) revert AssetAlreadyExists();
+        
+        // Create a new RealWorldAsset instance. Add it to the assets array and mark it as existing.
         RealWorldAsset asset = new RealWorldAsset(name, symbol);
+        _existingAsset[nameHash] = true;
         _assets.push(asset);
         emit AssetCreated(address(asset), name, symbol);
         return asset;
