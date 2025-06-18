@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { FactoryRealWorldAssets } from "./FactoryRealWorlAssets.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract MarketPlace is Ownable {
     
@@ -25,6 +26,7 @@ contract MarketPlace is Ownable {
     }
 
     mapping(uint256 => Sale) private _sales;
+    mapping(address => mapping(uint256 => uint256)) private _assetSales; // assetAddress -> assetId -> saleId
     uint256 private _saleCounter;
 
     event Listed(uint256 indexed saleId, address indexed assetAddress, address indexed seller, SaleType saleType, uint256 price);
@@ -63,6 +65,7 @@ contract MarketPlace is Ownable {
         uint256 price
     ) external returns (uint256) {
         if (assetAddress == address(0)) revert InvalidSaleType();
+        if (_isAssetListed(assetAddress, assetId)) revert SaleAlreadyActive();
         if (saleType == SaleType.FixedPrice && price <= 0) revert InvalidPrice();
         _saleCounter++;
         Sale storage sale = _sales[_saleCounter];
@@ -72,6 +75,7 @@ contract MarketPlace is Ownable {
         sale.price = price;
         sale.assetId = assetId;
         sale.active = true;
+        _assetSales[assetAddress][assetId] = _saleCounter;
 
         emit Listed(_saleCounter, assetAddress, msg.sender, saleType, price);
         return _saleCounter;
@@ -85,6 +89,7 @@ contract MarketPlace is Ownable {
         uint256 auctionDurationHours
     ) external returns (uint256) {
         if (assetAddress == address(0)) revert InvalidSaleType();
+        if (_isAssetListed(assetAddress, assetId)) revert SaleAlreadyActive();
         if (saleType != SaleType.Auction || startingPrice <= 0 || auctionDurationHours <= 0) revert InvalidPrice();
         
         
@@ -97,9 +102,34 @@ contract MarketPlace is Ownable {
         sale.auctionEndTime = block.timestamp + auctionDurationHours * 1 hours;
         sale.assetId = assetId;
         sale.active = true;
+        _assetSales[assetAddress][assetId] = _saleCounter;
 
         emit Listed(_saleCounter, assetAddress, msg.sender, saleType, startingPrice);
         return _saleCounter;
+    }
+
+    function _isAssetListed(address assetAddress, uint256 assetId) internal view returns (bool) {
+        return _assetSales[assetAddress][assetId] != 0;
+    }
+
+    function purchaseAsset(uint256 saleId) external payable {
+        Sale storage sale = _sales[saleId];
+        if (saleId == 0 || sale.assetAddress == address(0)) revert SaleNotFound();
+        if (!sale.active) revert InvalidSaleStatus();
+        if (sale.saleType != SaleType.FixedPrice) revert InvalidSaleType();
+        if (msg.value < sale.price) revert InvalidPrice();
+
+        IERC721(sale.assetAddress).transferFrom(sale.seller, msg.sender, sale.assetId);
+        
+        // Calculate fee and transfer to fee recipient
+        uint256 fee = (sale.price * _feePercentage) / 100;
+        payable(_feeRecipient).transfer(fee);
+        
+        // Transfer remaining amount to seller
+        payable(sale.seller).transfer(sale.price - fee);
+
+        sale.active = false;
+        emit Purchased(saleId, msg.sender, sale.price);
     }
 
 }
