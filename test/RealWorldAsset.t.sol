@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import { Test, console } from "forge-std/Test.sol";
 import { RealWorldAsset } from "../src/RealWorldAsset.sol";
 // Make sure OpenZeppelin contracts are installed and the path is correct
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable } from "@openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract RealWorldAssetTest is Test {
     address private admin;
@@ -16,7 +16,7 @@ contract RealWorldAssetTest is Test {
         admin = address(0x1);
         user = address(0x2);
         vm.startPrank(admin);
-            asset = new RealWorldAsset("Test Asset", "TAST");
+            asset = new RealWorldAsset("Test Asset", "TAST", admin);
         vm.stopPrank();
     }
 

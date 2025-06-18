@@ -2,8 +2,8 @@
 pragma solidity ^0.8.28;
 
 import { FactoryRealWorldAssets } from "./FactoryRealWorldAssets.sol";
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC721 } from "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import { Ownable } from "@openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract MarketPlace is Ownable {
     
@@ -134,7 +134,7 @@ contract MarketPlace is Ownable {
         emit Purchased(saleId, msg.sender, sale.price);
     }
 
-    function placeBid(uint256 saleId) external payable {
+    function placeBid(uint256 saleId, uint256 value) external payable {
         Sale storage sale = _sales[saleId];
         if (saleId == 0 || sale.assetAddress == address(0)) revert SaleNotFound();
         if (!sale.active || sale.saleType != SaleType.Auction) revert InvalidSaleStatus();
@@ -145,20 +145,20 @@ contract MarketPlace is Ownable {
             payable(sale.highestBidder).transfer(sale.highestBid);
         }
 
-        sale.highestBid = msg.value;
+        sale.highestBid = value;
         sale.highestBidder = msg.sender;
 
-        emit BidPlaced(saleId, msg.sender, msg.value);
+        emit BidPlaced(saleId, msg.sender, value);
     }
 
     function endAuction(uint256 saleId) external {
         Sale storage sale = _sales[saleId];
         if (saleId == 0 || sale.assetAddress == address(0)) revert SaleNotFound();
         if (!sale.active || sale.saleType != SaleType.Auction) revert InvalidSaleStatus();
-        if (block.timestamp < sale.auctionEndTime) revert AuctionNotActive();
+        if (block.timestamp > sale.auctionEndTime) revert AuctionNotActive();
 
         if (sale.highestBidder != address(0) && sale.highestBid > 0) {
-            IERC721(sale.assetAddress).transferFrom(sale.seller, sale.highestBidder, sale.assetId);
+            IERC721(sale.assetAddress).transferFrom(address(this), sale.highestBidder, sale.assetId);
             payable(sale.seller).transfer(sale.highestBid);
             emit AuctionEnded(saleId, sale.highestBidder, sale.highestBid);
         } else {
@@ -188,5 +188,23 @@ contract MarketPlace is Ownable {
     function setFeePercentage(uint16 newFeePercentage) external onlyOwner {
         if (newFeePercentage > 10) revert InvalidFeePercentage();
         _feePercentage = newFeePercentage;
+    }
+
+    function getFactory() public view returns (address) {
+        return address(_factory);
+    }
+
+    function getSale(uint256 saleId) public view returns (Sale memory) {
+        Sale storage sale = _sales[saleId];
+        if (saleId == 0 || sale.assetAddress == address(0)) revert SaleNotFound();
+        return sale;
+    }
+
+    function getSales() public view returns (Sale[] memory) {
+        Sale[] memory sales = new Sale[](_saleCounter);
+        for (uint256 i = 1; i <= _saleCounter; i++) {
+            sales[i - 1] = _sales[i];
+        }
+        return sales;
     }
 }

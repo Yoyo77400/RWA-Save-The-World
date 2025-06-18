@@ -11,8 +11,9 @@ contract RealWorldAsset is ERC721URIStorage, Ownable, Pausable {
     error LimitExceeded();
     error BadAddress();
 
-    constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) Ownable(msg.sender) Pausable() {
+    constructor(string memory name_, string memory symbol_, address _owner) ERC721(name_, symbol_) Ownable(msg.sender) Pausable() {
         _tokenIdCounter = 0;
+        _transferOwnership(_owner);
     }
 
     function mint(address to, string memory tokenURI) external onlyOwner whenNotPaused {

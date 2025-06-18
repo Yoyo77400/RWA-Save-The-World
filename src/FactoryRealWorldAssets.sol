@@ -16,14 +16,14 @@ contract FactoryRealWorldAssets {
     error AssetAlreadyExists();
     error AssetNotFound();
 
-    function createAsset(string memory name, string memory symbol) external returns (RealWorldAsset) {
+    function createAsset(string memory name, string memory symbol, address _owner) external returns (RealWorldAsset) {
         bytes32 nameHash = keccak256(abi.encodePacked(name));
         if (bytes(name).length == 0) revert EmptyName();
         if (bytes(symbol).length == 0) revert EmptySymbol();
         if (_existingAsset[nameHash]) revert AssetAlreadyExists();
         
         // Create a new RealWorldAsset instance. Add it to the assets array and mark it as existing.
-        RealWorldAsset asset = new RealWorldAsset(name, symbol);
+        RealWorldAsset asset = new RealWorldAsset(name, symbol, _owner);
         _existingAsset[nameHash] = true;
         _isAssets[address(asset)] = true;
         _assets.push(asset);
