@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { FactoryRealWorldAssets } from "./FactoryRealWorlAssets.sol";
+import { FactoryRealWorldAssets } from "./FactoryRealWorldAssets.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MarketPlace is Ownable {
     
     uint16 private _feePercentage;
     address private _feeRecipient;
     FactoryRealWorldAssets private _factory;
+    
 
     enum SaleStatus { Active, Inactive }
     enum SaleType { FixedPrice, Auction }
@@ -177,5 +178,15 @@ contract MarketPlace is Ownable {
         sale.active = false;
         delete _assetSales[sale.assetAddress][sale.assetId];
         emit ListingRemoved(saleId);
+    }
+
+    function setFeeRecipient(address newFeeRecipient) external onlyOwner {
+        if (newFeeRecipient == address(0)) revert InvalidFeeRecipient();
+        _feeRecipient = newFeeRecipient;
+    }
+
+    function setFeePercentage(uint16 newFeePercentage) external onlyOwner {
+        if (newFeePercentage > 10) revert InvalidFeePercentage();
+        _feePercentage = newFeePercentage;
     }
 }
