@@ -129,6 +129,7 @@ contract MarketPlace is Ownable {
         payable(sale.seller).transfer(sale.price - fee);
 
         sale.active = false;
+        delete _assetSales[sale.assetAddress][sale.assetId];
         emit Purchased(saleId, msg.sender, sale.price);
     }
 
@@ -164,6 +165,7 @@ contract MarketPlace is Ownable {
         }
 
         sale.active = false;
+        delete _assetSales[sale.assetAddress][sale.assetId];
     }
 
     function removeListing(uint256 saleId) external {
@@ -173,6 +175,7 @@ contract MarketPlace is Ownable {
         if (sale.seller != msg.sender) revert NotAssetOwner();
 
         sale.active = false;
+        delete _assetSales[sale.assetAddress][sale.assetId];
         emit ListingRemoved(saleId);
     }
 }
