@@ -132,4 +132,47 @@ contract MarketPlace is Ownable {
         emit Purchased(saleId, msg.sender, sale.price);
     }
 
+    function placeBid(uint256 saleId) external payable {
+        Sale storage sale = _sales[saleId];
+        if (saleId == 0 || sale.assetAddress == address(0)) revert SaleNotFound();
+        if (!sale.active || sale.saleType != SaleType.Auction) revert InvalidSaleStatus();
+        if (block.timestamp >= sale.auctionEndTime) revert AuctionAlreadyEnded();
+        if (msg.value <= sale.highestBid) revert InvalidPrice();
+
+        if (sale.highestBidder != address(0)) {
+            payable(sale.highestBidder).transfer(sale.highestBid);
+        }
+
+        sale.highestBid = msg.value;
+        sale.highestBidder = msg.sender;
+
+        emit BidPlaced(saleId, msg.sender, msg.value);
+    }
+
+    function endAuction(uint256 saleId) external {
+        Sale storage sale = _sales[saleId];
+        if (saleId == 0 || sale.assetAddress == address(0)) revert SaleNotFound();
+        if (!sale.active || sale.saleType != SaleType.Auction) revert InvalidSaleStatus();
+        if (block.timestamp < sale.auctionEndTime) revert AuctionNotActive();
+
+        if (sale.highestBidder != address(0) && sale.highestBid > 0) {
+            IERC721(sale.assetAddress).transferFrom(sale.seller, sale.highestBidder, sale.assetId);
+            payable(sale.seller).transfer(sale.highestBid);
+            emit AuctionEnded(saleId, sale.highestBidder, sale.highestBid);
+        } else {
+            IERC721(sale.assetAddress).transferFrom(address(this), sale.seller, sale.assetId);
+        }
+
+        sale.active = false;
+    }
+
+    function removeListing(uint256 saleId) external {
+        Sale storage sale = _sales[saleId];
+        if (saleId == 0 || sale.assetAddress == address(0)) revert SaleNotFound();
+        if (!sale.active) revert InvalidSaleStatus();
+        if (sale.seller != msg.sender) revert NotAssetOwner();
+
+        sale.active = false;
+        emit ListingRemoved(saleId);
+    }
 }
