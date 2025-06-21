@@ -4,6 +4,8 @@ pragma solidity ^0.8.28;
 import { Test, console } from "forge-std/Test.sol";
 import { FactoryRealWorldAssets } from "../src/FactoryRealWorldAssets.sol";
 import { RealWorldAsset } from "../src/RealWorldAsset.sol";
+import { RealWorldAssetToken } from "../src/RealWorldAssetToken.sol";
+import { RealWorldAssetManager } from "../src/RealWorldAssetManager.sol";
 
 contract FactoryRealWorldAssetsTest is Test {
     address private admin;
@@ -20,10 +22,14 @@ contract FactoryRealWorldAssetsTest is Test {
         string memory name = "Test Asset";
         string memory symbol = "TAST";
         RealWorldAsset asset = factory.createAsset(name, symbol, admin);
+        RealWorldAssetToken assetToken = RealWorldAssetToken(factory.getAssetToken(address(asset)));
+        RealWorldAssetManager assetManager = RealWorldAssetManager(factory.getAssetManager(address(asset)));
 
         assertEq(asset.getName(), name);
         assertEq(asset.symbol(), symbol);
         assertEq(address(asset), address(factory.getAssets()[0]));
+        assertEq(address(assetToken), address(factory.getAssetToken(address(asset))));
+        assertEq(address(assetManager), address(factory.getAssetManager(address(asset))));
     }
 
     function testCreateAssetWithEmptyName() public {
@@ -86,5 +92,28 @@ contract FactoryRealWorldAssetsTest is Test {
         assertEq(addresses.length, 2);
         assertEq(addresses[0], address(factory.getAssets()[0]));
         assertEq(addresses[1], address(factory.getAssets()[1]));
+    }
+
+    function testGetAssetToken() public {
+        RealWorldAsset asset = factory.createAsset("Test Asset", "TAST", admin);
+        RealWorldAssetToken assetToken = factory.getAssetToken(address(asset));
+        assertEq(assetToken.name(), "Test Asset");
+        assertEq(assetToken.symbol(), "TAST");
+    }
+
+    function testGetAssetManager() public {
+        RealWorldAsset asset = factory.createAsset("Test Asset", "TAST", admin);
+        RealWorldAssetManager assetManager = factory.getAssetManager(address(asset));
+        assertEq(address(assetManager.getAsset()), address(asset));
+        assertEq(address(assetManager.getAssetToken()), address(factory.getAssetToken(address(asset))));
+    }
+
+    function testGetAssetTokenForNonExistentAsset() public {
+        vm.expectRevert(abi.encodeWithSelector(FactoryRealWorldAssets.AssetNotFound.selector));
+        factory.getAssetToken(address(0));
+    }
+    function testGetAssetManagerForNonExistentAsset() public {
+        vm.expectRevert(abi.encodeWithSelector(FactoryRealWorldAssets.AssetNotFound.selector));
+        factory.getAssetManager(address(0));
     }
 }

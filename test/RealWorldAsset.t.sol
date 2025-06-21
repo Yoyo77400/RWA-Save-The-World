@@ -3,7 +3,6 @@ pragma solidity ^0.8.28;
 
 import { Test, console } from "forge-std/Test.sol";
 import { RealWorldAsset } from "../src/RealWorldAsset.sol";
-// Make sure OpenZeppelin contracts are installed and the path is correct
 import { Ownable } from "@openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract RealWorldAssetTest is Test {
@@ -60,7 +59,7 @@ contract RealWorldAssetTest is Test {
         vm.stopPrank();
     }
 
-    function testGetName() public {
+    function testGetName() public view{
         string memory expectedName = "Test Asset";
         assertEq(asset.getName(), expectedName);
     }

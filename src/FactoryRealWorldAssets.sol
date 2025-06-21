@@ -2,14 +2,22 @@
 pragma solidity ^0.8.28;
 
 import { RealWorldAsset } from "./RealWorldAsset.sol";
+import { RealWorldAssetToken } from "./RealWorldAssetToken.sol";
+import { RealWorldAssetManager } from "./RealWorldAssetManager.sol";
 
 contract FactoryRealWorldAssets {
-    // State variables
+    
     RealWorldAsset[] private _assets;
     mapping(bytes32 => bool) private _existingAsset;
     mapping(address => bool) private _isAssets;
-
-    // Events and errors
+    mapping(address => Assets) private _assetDetails;
+    struct Assets {
+        address assetAddress;
+        address assetTokenAddress;
+        address assetManagerAddress;
+        address owner;
+    }
+    
     event AssetCreated(address indexed assetAddress, string name, string symbol);
     error EmptyName();
     error EmptySymbol();
@@ -22,8 +30,15 @@ contract FactoryRealWorldAssets {
         if (bytes(symbol).length == 0) revert EmptySymbol();
         if (_existingAsset[nameHash]) revert AssetAlreadyExists();
         
-        // Create a new RealWorldAsset instance. Add it to the assets array and mark it as existing.
         RealWorldAsset asset = new RealWorldAsset(name, symbol, _owner);
+        RealWorldAssetToken assetToken = new RealWorldAssetToken(name, symbol, 1000000 * 10 ** 18, _owner);
+        RealWorldAssetManager assetManager = new RealWorldAssetManager(address(asset), address(assetToken), 1, _owner);
+        _assetDetails[address(asset)] = Assets({
+            assetAddress: address(asset),
+            assetTokenAddress: address(assetToken),
+            assetManagerAddress: address(assetManager),
+            owner: _owner
+        });
         _existingAsset[nameHash] = true;
         _isAssets[address(asset)] = true;
         _assets.push(asset);
@@ -33,6 +48,16 @@ contract FactoryRealWorldAssets {
 
     function getAssets() external view returns (RealWorldAsset[] memory) {
         return _assets;
+    }
+
+    function getAssetToken(address assetAddress) external view returns (RealWorldAssetToken) {
+        if (!_isAssets[assetAddress]) revert AssetNotFound();
+        return RealWorldAssetToken(_assetDetails[assetAddress].assetTokenAddress);
+    }
+
+    function getAssetManager(address assetAddress) external view returns (RealWorldAssetManager) {
+        if (!_isAssets[assetAddress]) revert AssetNotFound();
+        return RealWorldAssetManager(_assetDetails[assetAddress].assetManagerAddress);
     }
 
     function getAssetCount() external view returns (uint256) {
