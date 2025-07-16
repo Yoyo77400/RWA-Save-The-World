@@ -1,27 +1,38 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { ERC721 } from "@openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
-import { Ownable } from "@openzeppelin-contracts/contracts/access/Ownable.sol";
-import { ERC721URIStorage } from "@openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin-contracts/contracts/utils/Pausable.sol";
+import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import { ERC721BurnableUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract RealWorldAsset is ERC721URIStorage, Ownable, Pausable {
+contract RealWorldAsset is Initializable,
+                           ERC721Upgradeable,
+                           ERC721URIStorageUpgradeable,
+                           ERC721BurnableUpgradeable,
+                           OwnableUpgradeable,
+                           PausableUpgradeable
+{
     uint256 private _tokenIdCounter;
+
     error LimitExceeded();
     error BadAddress();
 
-    constructor(string memory name_, string memory symbol_,  address _owner) ERC721(name_, symbol_) Ownable(msg.sender) Pausable() {
+    function initialize(string memory name_, string memory symbol_, address _owner) public initializer {
+        __ERC721_init(name_, symbol_);
+        __Ownable_init(_owner);
+        __Pausable_init();
         _tokenIdCounter = 0;
-        _transferOwnership(_owner);
     }
 
-    function mint(address to, string memory tokenURI) external onlyOwner whenNotPaused {
+    function mint(address to, string memory uri_) external onlyOwner whenNotPaused {
         if (to == address(0)) revert BadAddress();
 
         uint256 tokenId = _tokenIdCounter;
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, tokenURI);
+        _setTokenURI(tokenId, uri_);
         _tokenIdCounter++;
     }
 
@@ -37,10 +48,29 @@ contract RealWorldAsset is ERC721URIStorage, Ownable, Pausable {
         return tokenURI(tokenId);
     }
 
-    function pause () external onlyOwner {
+    function pause() external onlyOwner {
         _pause();
     }
-    function unpause () external onlyOwner {
+
+    function unpause() external onlyOwner {
         _unpause();
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 }

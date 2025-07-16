@@ -40,7 +40,8 @@ contract MarketPlaceTest is Test {
             factory = new FactoryRealWorldAssets();
             asset1 = factory.createAsset("Asset 1", "A1", admin);
             asset2 = factory.createAsset("Asset 2", "A2", admin);
-            marketPlace = new MarketPlace(address(factory), feeRecipient, feePercentage);
+            marketPlace = new MarketPlace();
+            marketPlace.initialize(address(factory), feeRecipient, feePercentage);
             asset1.mint(user1, "https://example.com/asset1");
             asset2.mint(user2, "https://example.com/asset2");
             
@@ -72,7 +73,8 @@ contract MarketPlaceTest is Test {
 
     function testGetFactory() public {
         vm.startPrank(admin);
-            marketPlace = new MarketPlace(address(factory), feeRecipient, feePercentage);
+            marketPlace = new MarketPlace();
+            marketPlace.initialize(address(factory), feeRecipient, feePercentage);
         vm.stopPrank();
         //assertEq(marketPlace.getFactory(), address(factory));  // doit fonctionner
     }

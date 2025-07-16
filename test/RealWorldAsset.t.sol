@@ -3,7 +3,9 @@ pragma solidity ^0.8.28;
 
 import { Test, console } from "forge-std/Test.sol";
 import { RealWorldAsset } from "../src/RealWorldAsset.sol";
-import { Ownable } from "@openzeppelin-contracts/contracts/access/Ownable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+
 
 contract RealWorldAssetTest is Test {
     address private admin;
@@ -15,8 +17,10 @@ contract RealWorldAssetTest is Test {
         admin = address(0x1);
         user = address(0x2);
         vm.startPrank(admin);
-            asset = new RealWorldAsset("Test Asset", "TAST", admin);
+            asset = new RealWorldAsset(); // déploiement sans arguments
+            asset.initialize("Test Asset", "TAST", admin); // appel explicite d'initialize
         vm.stopPrank();
+
     }
 
     function testMintByAdmin() public {
@@ -41,7 +45,7 @@ contract RealWorldAssetTest is Test {
         string memory tokenURI = "https://example.com/token/1";
         uint256 counter = 0;
 
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, user));
         vm.warp(block.timestamp);
         vm.startPrank(user);
             asset.mint(to, tokenURI);
