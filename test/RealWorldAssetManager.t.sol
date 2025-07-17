@@ -28,7 +28,6 @@ contract RealWorldAssetManagerTest is Test {
         assetManager = new RealWorldAssetManager();
         assetManager.initialize(address(asset), address(assetToken), 1 ether, owner_);
 
-        // Approve assetManager and send tokens to him for sale
         assetToken.approve(address(assetManager), 1_000_000 ether);
         assetToken.transfer(address(assetManager), 1_000 ether);
 
@@ -41,10 +40,10 @@ contract RealWorldAssetManagerTest is Test {
     }
 
     function testBuyAssetToken() public {
-        uint256 amount = 100; // 100 tokens (in wei)
-        uint256 price = amount * assetManager.getPricePerToken(); // Correct price calculation
+        uint256 amount = 100;
+        uint256 price = amount * assetManager.getPricePerToken();
 
-        vm.deal(user, 10000 ether); // give ether to user
+        vm.deal(user, 10000 ether);
 
         vm.startPrank(user);
 

@@ -17,8 +17,8 @@ contract RealWorldAssetTest is Test {
         admin = address(0x1);
         user = address(0x2);
         vm.startPrank(admin);
-            asset = new RealWorldAsset(); // déploiement sans arguments
-            asset.initialize("Test Asset", "TAST", admin); // appel explicite d'initialize
+            asset = new RealWorldAsset();
+            asset.initialize("Test Asset", "TAST", admin);
         vm.stopPrank();
 
     }
@@ -34,7 +34,7 @@ contract RealWorldAssetTest is Test {
                 counter++;
             vm.stopPrank();
 
-        uint256 tokenId = asset.currentTokenId() - 1; // Last minted token ID
+        uint256 tokenId = asset.currentTokenId() - 1;
         assertEq(asset.ownerOf(tokenId), to);
         assertEq(asset.getTokenURI(tokenId), tokenURI);
         assertEq(asset.currentTokenId(), counter);

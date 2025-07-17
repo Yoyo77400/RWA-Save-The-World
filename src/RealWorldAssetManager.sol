@@ -63,7 +63,7 @@ contract RealWorldAssetManager is Initializable, OwnableUpgradeable {
         if (msg.value < requiredPrice) revert InvalidPrice();
         if (_assetToken.totalSupply() + amount > _assetToken.limitSupply()) revert LimitExceeded();
 
-        _assetToken.transfer(msg.sender, amount); // suppose que le contrat détient les tokens
+        _assetToken.transfer(msg.sender, amount);
         (bool sent, ) = payable(owner()).call{value: requiredPrice}("");
         require(sent, "Transfer failed");
 

@@ -21,10 +21,8 @@ contract RealWorldAssetTokenTest is Test {
         owner = address(0x123);
         user = address(0x456);
 
-        // Déploiement de l'implémentation
         RealWorldAssetToken implementation = new RealWorldAssetToken();
 
-        // Préparation de l'initialisation
         bytes memory init = abi.encodeWithSelector(
             RealWorldAssetToken.initialize.selector,
             assetName,
@@ -33,7 +31,6 @@ contract RealWorldAssetTokenTest is Test {
             owner
         );
 
-        // Déploiement du proxy
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), init);
         assetToken = RealWorldAssetToken(address(proxy));
     }
@@ -67,7 +64,7 @@ contract RealWorldAssetTokenTest is Test {
 
     function testMintToZeroAddress() public {
         vm.startPrank(address(0));
-        vm.expectRevert(); // pas besoin du selector ici car c'est une fonction personnalisée dans Ownable
+        vm.expectRevert();
         assetToken.mint(badAddress, 1000 * 10 ** 18);
         vm.stopPrank();
     }

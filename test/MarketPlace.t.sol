@@ -76,7 +76,6 @@ contract MarketPlaceTest is Test {
             marketPlace = new MarketPlace();
             marketPlace.initialize(address(factory), feeRecipient, feePercentage);
         vm.stopPrank();
-        //assertEq(marketPlace.getFactory(), address(factory));  // doit fonctionner
     }
 
     function testGetListings() public {
@@ -141,45 +140,6 @@ contract MarketPlaceTest is Test {
         vm.stopPrank();
     }
 
-    /*
-    Problematique de gestion des frais de gas
-    function testPurchaseAssetFixedPrice() public {
-        vm.startPrank(user1);
-            uint256 saleId = marketPlace.listAssetFixedPrice(address(asset1), 1, MarketPlace.SaleType.FixedPrice, 100);
-        vm.stopPrank();
-
-        vm.startPrank(user2);
-            marketPlace.purchaseAsset(saleId);
-        vm.stopPrank();
-
-        MarketPlace.Sale memory sale = marketPlace.getSale(saleId);
-        assertFalse(sale.active);
-        assertEq(asset1.ownerOf(1), user2);
-    }
-    */
-
-    /*
-    function testPurchaseAssetAuction() public {
-        vm.startPrank(user2);
-            uint256 saleId = marketPlace.listAssetAuction(address(asset2), 1, MarketPlace.SaleType.Auction, 50, 1);
-        vm.stopPrank();
-
-        vm.startPrank(user3);
-            marketPlace.placeBid(saleId, 60);
-        vm.stopPrank();
-
-        vm.warp(block.timestamp + 10 minutes); // Simulate auction end time
-
-        vm.startPrank(user4);
-            marketPlace.purchaseAsset(saleId);
-        vm.stopPrank();
-
-        MarketPlace.Sale memory sale = marketPlace.getSale(saleId);
-        assertFalse(sale.active);
-        assertEq(asset2.ownerOf(1), user4);
-    }
-    */
-
     function testListAssetAlreadyListed() public {
         vm.startPrank(user1);
             marketPlace.listAssetFixedPrice(address(asset1), 0, MarketPlace.SaleType.FixedPrice, 100);
@@ -206,22 +166,5 @@ contract MarketPlaceTest is Test {
         vm.stopPrank();
     }
 
-    /*
-    problématique de récupération de l'IERC721
-    function testEndAuction() public {
-        vm.startPrank(user2);
-            uint256 saleId = marketPlace.listAssetAuction(address(asset2), 1, MarketPlace.SaleType.Auction, 50, 1);
-        vm.stopPrank();
-
-        vm.warp(block.timestamp);
-
-        vm.startPrank(user3);
-            marketPlace.endAuction(saleId);
-        vm.stopPrank();
-        MarketPlace.Sale memory sale = marketPlace.getSale(saleId);
-        assertFalse(sale.active);
-        assertEq(asset2.ownerOf(1), user3);
-    }
-    */
 
 }
