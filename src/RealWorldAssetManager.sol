@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { RealWorldAsset } from "./RealWorldAsset.sol";
 import { RealWorldAssetToken } from "./RealWorldAssetToken.sol";
-import { Ownable } from "@openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract RealWorldAssetManager is Ownable {
+contract RealWorldAssetManager is Initializable, OwnableUpgradeable {
     RealWorldAsset private _asset;
     RealWorldAssetToken private _assetToken;
-    uint256 pricePerToken;
+    uint256 private pricePerToken;
 
     event AssetTokenUpdated(address indexed assetTokenAddress);
     event AssetOwnershipTransferred(address indexed newOwner);
@@ -21,21 +22,31 @@ contract RealWorldAssetManager is Ownable {
     error InvalidPrice();
     error LimitExceeded();
 
-    constructor(address assetAddress, address assetTokenAddress, uint256 pricePerToken_, address owner_) Ownable(msg.sender) {
-        if (assetAddress == address(0)) revert InvalidAssetAddress();
-        if (assetTokenAddress == address(0)) revert InvalidAssetTokenAddress();
+    address public asset;
+    address public assetToken;
 
-        _asset = RealWorldAsset(assetAddress);
-        _assetToken = RealWorldAssetToken(assetTokenAddress);
+
+    function initialize(
+        address asset_,
+        address assetToken_,
+        uint256 pricePerToken_,
+        address owner_
+    ) public initializer {
+        __Ownable_init(owner_);
+        asset = asset_;
+        assetToken = assetToken_;
         pricePerToken = pricePerToken_;
-        _transferOwnership(owner_);
+
+        _asset = RealWorldAsset(asset_);
+        _assetToken = RealWorldAssetToken(assetToken_);
     }
+
 
     function updateAssetToken(address newAssetTokenAddress) external onlyOwner {
         if (newAssetTokenAddress == address(0)) revert InvalidAssetTokenAddress();
         _assetToken = RealWorldAssetToken(newAssetTokenAddress);
         emit AssetTokenUpdated(newAssetTokenAddress);
-    } 
+    }
 
     function getAsset() public view returns (RealWorldAsset) {
         return _asset;
@@ -52,22 +63,36 @@ contract RealWorldAssetManager is Ownable {
         if (msg.value < requiredPrice) revert InvalidPrice();
         if (_assetToken.totalSupply() + amount > _assetToken.limitSupply()) revert LimitExceeded();
 
-        _assetToken.transferFrom(owner(), msg.sender, amount);
+        _assetToken.transfer(msg.sender, amount);
         (bool sent, ) = payable(owner()).call{value: requiredPrice}("");
         require(sent, "Transfer failed");
+
         emit Bought(msg.sender, amount, requiredPrice);
     }
 
     function sellAssetToken(uint256 amount) external {
-        if(amount == 0) revert InvalidAmount();
-        if(address(_assetToken) == address(0)) revert AssetNotFound();
+        if (amount == 0) revert InvalidAmount();
+        if (address(_assetToken) == address(0)) revert AssetNotFound();
 
+        _assetToken.transferFrom(msg.sender, address(this), amount);
         _assetToken.burn(amount);
-        payable(owner()).transfer(amount * pricePerToken);
+
+        uint256 refund = amount * pricePerToken;
+        (bool sent, ) = payable(msg.sender).call{value: refund}("");
+        require(sent, "Refund failed");
     }
 
     function getPricePerToken() external view returns (uint256) {
         return pricePerToken;
     }
+
+    function setDependencies(address assetAddr, address tokenAddr) external onlyOwner {
+        _asset = RealWorldAsset(assetAddr);
+        _assetToken = RealWorldAssetToken(tokenAddr);
+
+        asset = assetAddr;             
+        assetToken = tokenAddr;         
+    }
+
 
 }

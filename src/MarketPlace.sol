@@ -3,23 +3,23 @@ pragma solidity ^0.8.28;
 
 import { FactoryRealWorldAssets } from "./FactoryRealWorldAssets.sol";
 import { IERC721 } from "@openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
-import { Ownable } from "@openzeppelin-contracts/contracts/access/Ownable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract MarketPlace is Ownable {
-    
+contract MarketPlace is Initializable, OwnableUpgradeable {
     uint16 private _feePercentage;
     address private _feeRecipient;
     FactoryRealWorldAssets private _factory;
-    
 
     enum SaleStatus { Active, Inactive }
     enum SaleType { FixedPrice, Auction }
+
     struct Sale {
         address assetAddress;
         address seller;
         SaleType saleType;
-        uint256 price; // For FixedPrice
-        uint256 auctionEndTime; // For Auction
+        uint256 price;
+        uint256 auctionEndTime;
         uint256 assetId;
         uint256 highestBid;
         address highestBidder;
@@ -27,7 +27,7 @@ contract MarketPlace is Ownable {
     }
 
     mapping(uint256 => Sale) private _sales;
-    mapping(address => mapping(uint256 => uint256)) private _assetSales; // assetAddress -> assetId -> saleId
+    mapping(address => mapping(uint256 => uint256)) private _assetSales;
     uint256 private _saleCounter;
 
     event Listed(uint256 indexed saleId, address indexed assetAddress, address indexed seller, SaleType saleType, uint256 price);
@@ -50,11 +50,13 @@ contract MarketPlace is Ownable {
     error InvalidFeePercentage();
     error InvalidFeeRecipient();
 
-
-    constructor(address factoryAddress, address feeRecipient, uint16 feePercentage) Ownable(msg.sender) {
+    /// @notice Appelée à la place du constructeur pour initialiser le contrat
+    function initialize(address factoryAddress, address feeRecipient, uint16 feePercentage) public initializer {
+        __Ownable_init(msg.sender);
         _factory = FactoryRealWorldAssets(factoryAddress);
         _feeRecipient = feeRecipient;
         _feePercentage = feePercentage;
+
         if (feeRecipient == address(0)) revert InvalidFeeRecipient();
         if (feePercentage > 10) revert InvalidFeePercentage();
     }
